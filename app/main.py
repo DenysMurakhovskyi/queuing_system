@@ -11,11 +11,18 @@ class Simulation:
 
     @property
     def queue_current_len(self) -> int:
-        return len(self._queue)
+        return len(self._arrival_queue)
+
+    @property
+    def loading_airplane(self) -> Airplane:
+        return self._loading_airplane
 
     def __init__(self):
+        if self.LOADING_TIME not in [0, 1]:
+            raise NotImplementedError('The case is not implemented')
+
         self._timer: int = 0
-        self._queue: deque = deque()
+        self._arrival_queue: deque = deque()
         self._loading_airplane: Union[Airplane, None] = None
         self._present_airplanes: List = Airplane.get_list_of_airplanes(self.AIRPLANES_CAPACITIES)
         self._flown_away_airplanes: List = []
@@ -37,6 +44,11 @@ class Simulation:
 
             if self._loading_airplane is None:
                 self._choose_airplane_for_load()
+
+            if self._loading_airplane is None:  # better to write is still None
+                self._timer += 1
+                continue
+
             self._load_containers()
 
             if self._loading_airplane.is_full_loaded():
@@ -48,11 +60,11 @@ class Simulation:
 
     def _add_containers(self, n_to_add: int) -> NoReturn:
         """
-        Put containers into the _queue
+        Put _containers into the _arrival_queue
         @return: None
         """
-        for container in [Container(arrival_time=self._timer)] * n_to_add:
-            self._queue.append(container)
+        for _ in range(n_to_add):
+            self._arrival_queue.append(Container(arrival_time=self._timer))
 
     def _choose_airplane_for_load(self) -> NoReturn:
         """
@@ -77,16 +89,21 @@ class Simulation:
         """
         pass
 
-    def _load_containers(self):
+    def _load_containers(self) -> int:
         """
-        Loads containers into an airplane
-        @return: None
+        Loads _containers into an airplane
+        @return: number of loaded _containers
         """
-        pass
+        containers_to_load = list(filter(lambda x: x.arrival_time <= self._timer - self.LOADING_TIME,
+                                         self._arrival_queue))
+        for container in containers_to_load:
+            self._arrival_queue.popleft()
+            self._loading_airplane.load(container)
+        return len(containers_to_load)
 
     def _put_container_into_history(self):
         """
-        Puts loaded containers into the statistics class
+        Puts loaded _containers into the statistics class
         @return:
         """
         pass

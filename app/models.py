@@ -21,11 +21,21 @@ class Airplane:
 
     airplane_id: int
     capacity: int
-    current_load: int = 0
+    _containers: List[Container] = field(default_factory=list)
+
+    @property
+    def current_load(self):
+        return len(self._containers)
 
     @property
     def is_full_loaded(self):
         return self.capacity == self.current_load
+
+    def load(self, container: Container) -> NoReturn:
+        self._containers.append(container)
+
+    def unload(self):
+        self._containers = []
 
     @staticmethod
     def get_new_airplane(capacity: int) -> "Airplane":
