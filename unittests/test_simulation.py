@@ -1,10 +1,11 @@
+from collections import deque
 from unittest import TestCase
 
-from app.main import Simulation
-from collections import deque
-from app.models import Airplane
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
+
+from app.main import Simulation
+from app.models import Airplane
 
 
 class TestSimulation(TestCase):

@@ -1,7 +1,9 @@
 from collections import deque
-from app.models import Container, Airplane, ModelStats
 from typing import List, NoReturn, Union, MutableMapping
+
 from numpy.random import normal
+
+from app.models import Container, Airplane, ModelStats
 
 
 class Simulation:
@@ -20,7 +22,7 @@ class Simulation:
         return self._loading_airplane
 
     def __init__(self):
-        self._timer: int = 0
+        self._timer: int = 1
         self._total_containers_passed = 0
         self._arrival_queue: deque = deque()
         self._loading_airplane: Union[Airplane, None] = None
@@ -98,8 +100,12 @@ class Simulation:
         Makes all the work with an airplane departure
         @return: None
         """
-        self._loading_airplane.departure_time, self._loading_airplane.arrival_time =\
-            self._timer, self._timer + self._generate_flight_time()
+        self._loading_airplane.set_containers_departure_time(self._timer)
+        self._stats.put_containers_loading_time(self._loading_airplane.containers_loading_times)
+        self._stats.put_containers_departure_time(self._loading_airplane.containers_departure_times)
+        self._loading_airplane.departure_time = self._timer
+        self._stats.put_airplane_time(self._loading_airplane.load_time)
+        self._loading_airplane.arrival_time = self._timer + self._generate_flight_time()
         index_in_list = self._present_airplanes.index(self._loading_airplane)
         departed_airplane = self._present_airplanes.pop(index_in_list)
         self._flown_away_airplanes.append(self._loading_airplane)
@@ -124,7 +130,6 @@ class Simulation:
         """
         if self.CONTAINERS_LOAD_PER_INTERVAL == -1:
             containers_to_load = list(self._arrival_queue)
-
         else:
             if self._timer != 0:
                 containers_to_load = list(self._arrival_queue)[:self.CONTAINERS_LOAD_PER_INTERVAL]
@@ -132,7 +137,10 @@ class Simulation:
                 containers_to_load = []
 
         for container in containers_to_load:
+            container.set_loading_time(self._timer)
             self._arrival_queue.popleft()
+            if self._loading_airplane.is_full_loaded:
+                pass
             self._loading_airplane.load(container)
         return len(containers_to_load)
 
@@ -142,12 +150,13 @@ class Simulation:
         self._present_airplanes.append(airplane)
         self._flown_away_airplanes.pop(self._flown_away_airplanes.index(airplane))
 
-    def _put_container_into_history(self):
-        """
-        Puts loaded _containers into the statistics class
-        @return:
-        """
-        pass
+    @staticmethod
+    def _show_airplane_info(airplane: Airplane) -> NoReturn:
+        print('\n=== AIRPLANE DEPARTURE INFO ===')
+        print(f'Airplane ID: {airplane.airplane_id}')
+        print(f'Number of containers: {airplane.current_load}')
+        print(f'Departure moment: {airplane.departure_time}')
+        print(f'Arrival moment: {airplane.arrival_time}')
 
     def _show_current_state(self) -> NoReturn:
         """
@@ -159,7 +168,8 @@ class Simulation:
         print(f'Number of containers in queue: {len(self._arrival_queue)}')
         print(f'Number of present airplanes: {len(self._present_airplanes)}')
         if self._loading_airplane:
-            print(f'Loading airplane ID: {self._loading_airplane.airplane_id}')
+            print(f'Loading airplane ID: {self._loading_airplane.airplane_id}'
+                  f' (capacity: {self._loading_airplane.capacity})')
             print(f'Current airplane load: {self._loading_airplane.current_load}')
         else:
             if self._flown_flag:
@@ -168,10 +178,6 @@ class Simulation:
             else:
                 print('There are no available airplanes')
 
-    @staticmethod
-    def _show_airplane_info(airplane: Airplane) -> NoReturn:
-        print('\n=== AIRPLANE DEPARTURE INFO ===')
-        print(f'Airplane ID: {airplane.airplane_id}')
-        print(f'Number of containers: {airplane.current_load}')
-        print(f'Departure moment: {airplane.departure_time}')
-        print(f'Arrival moment: {airplane.arrival_time}')
+
+
+
