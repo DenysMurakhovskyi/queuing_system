@@ -1,13 +1,15 @@
 from collections import deque
 from app.models import Container, Airplane, ModelStats
 from typing import List, NoReturn, Union, MutableMapping
+from numpy.random import normal
 
 
 class Simulation:
-
     CONTAINERS_ARRIVAL_PER_INTERVAL: int = 2
     CONTAINERS_LOAD_PER_INTERVAL: int = 1
     AIRPLANES_CAPACITIES: MutableMapping = {80: 3, 140: 2}
+    MEAN_TIME = 180
+    SCALE = 60
 
     @property
     def queue_current_len(self) -> int:
@@ -89,7 +91,10 @@ class Simulation:
         Generates an airplane's flight time using pre-defined rules
         @return: None
         """
-        pass
+        while True:
+            if self.MEAN_TIME - self.SCALE <= (
+                    value := normal(self.MEAN_TIME, self.SCALE)) <= self.MEAN_TIME + self.SCALE:
+                return value
 
     def _load_containers(self) -> int:
         """
@@ -128,8 +133,3 @@ class Simulation:
         print(f'Number of present airplanes: {len(self._present_airplanes)}')
         print(f'Loading airplane ID: {self._loading_airplane.airplane_id}')
         print(f'Current airplane load: {self._loading_airplane.current_load}')
-
-
-
-
-

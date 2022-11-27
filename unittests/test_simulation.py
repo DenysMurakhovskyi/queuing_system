@@ -3,6 +3,8 @@ from unittest import TestCase
 from app.main import Simulation
 from collections import deque
 from app.models import Airplane
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 
 class TestSimulation(TestCase):
@@ -37,5 +39,9 @@ class TestSimulation(TestCase):
         self.assertEqual(2, self.sim_model.loading_airplane.current_load)
 
     def test_generate_flight_time(self):
-        pass
+        values = [self.sim_model._generate_flight_time() for _ in range(2000)]
+        sns.displot(values, bins=20)
+        plt.show()
+
+
 
