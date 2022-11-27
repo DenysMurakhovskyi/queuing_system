@@ -21,6 +21,9 @@ class Airplane:
 
     airplane_id: int
     capacity: int
+    arrival_time: int = -1
+    departure_time: int = -1
+
     _containers: List[Container] = field(default_factory=list)
 
     @property

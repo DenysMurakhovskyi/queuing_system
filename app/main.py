@@ -28,6 +28,7 @@ class Simulation:
         self._flown_away_airplanes: List = []
         self._stats = ModelStats()
         self._model_used: bool = False
+        self._flown_flag: bool = False
 
     def run(self, steps=1000) -> ModelStats:
         """
@@ -42,17 +43,20 @@ class Simulation:
         while self._timer < steps:
             self._add_containers(self.CONTAINERS_ARRIVAL_PER_INTERVAL)
 
+            self._check_arrival()
+
             if self._loading_airplane is None:
                 self._choose_airplane_for_load()
 
             if self._loading_airplane is None:  # better to write is still None
                 self._timer += 1
+                self._show_current_state()
                 continue
 
             self._load_containers()
 
             if self._loading_airplane.is_full_loaded:
-                self._depart_airplane()
+                self._show_airplane_info(self._depart_airplane())
 
             self._show_current_state()
 
@@ -70,6 +74,16 @@ class Simulation:
 
         self._total_containers_passed += n_to_add
 
+    def _check_arrival(self) -> NoReturn:
+        """
+        Check and process airplane arrival
+        Returns:
+        """
+        if len(self._flown_away_airplanes) > 0:
+            for airplane in self._flown_away_airplanes:
+                if airplane.arrival_time == self._timer:
+                    self._make_arrival(airplane)
+
     def _choose_airplane_for_load(self) -> NoReturn:
         """
         Chooses the airplane for load using pre-defined rules
@@ -79,14 +93,21 @@ class Simulation:
             lowest_capacity = min([airplane.capacity for airplane in self._present_airplanes])
             self._loading_airplane = list(filter(lambda x: x.capacity == lowest_capacity, self._present_airplanes))[0]
 
-    def _depart_airplane(self) -> NoReturn:
+    def _depart_airplane(self) -> Airplane:
         """
         Makes all the work with an airplane departure
         @return: None
         """
-        pass
+        self._loading_airplane.departure_time, self._loading_airplane.arrival_time =\
+            self._timer, self._timer + self._generate_flight_time()
+        index_in_list = self._present_airplanes.index(self._loading_airplane)
+        departed_airplane = self._present_airplanes.pop(index_in_list)
+        self._flown_away_airplanes.append(self._loading_airplane)
+        self._loading_airplane = None
+        self._flown_flag = True
+        return departed_airplane
 
-    def _generate_flight_time(self) -> NoReturn:
+    def _generate_flight_time(self) -> int:
         """
         Generates an airplane's flight time using pre-defined rules
         @return: None
@@ -94,7 +115,7 @@ class Simulation:
         while True:
             if self.MEAN_TIME - self.SCALE <= (
                     value := normal(self.MEAN_TIME, self.SCALE)) <= self.MEAN_TIME + self.SCALE:
-                return value
+                return int(value)
 
     def _load_containers(self) -> int:
         """
@@ -115,6 +136,12 @@ class Simulation:
             self._loading_airplane.load(container)
         return len(containers_to_load)
 
+    def _make_arrival(self, airplane: Airplane) -> NoReturn:
+        airplane.arrival_time, airplane.departure_time = -1, -1
+        airplane.unload()
+        self._present_airplanes.append(airplane)
+        self._flown_away_airplanes.pop(self._flown_away_airplanes.index(airplane))
+
     def _put_container_into_history(self):
         """
         Puts loaded _containers into the statistics class
@@ -122,7 +149,7 @@ class Simulation:
         """
         pass
 
-    def _show_current_state(self):
+    def _show_current_state(self) -> NoReturn:
         """
         Shows current model state
         Returns: None
@@ -131,5 +158,20 @@ class Simulation:
         print(f'Total containers arrived: {self._total_containers_passed}')
         print(f'Number of containers in queue: {len(self._arrival_queue)}')
         print(f'Number of present airplanes: {len(self._present_airplanes)}')
-        print(f'Loading airplane ID: {self._loading_airplane.airplane_id}')
-        print(f'Current airplane load: {self._loading_airplane.current_load}')
+        if self._loading_airplane:
+            print(f'Loading airplane ID: {self._loading_airplane.airplane_id}')
+            print(f'Current airplane load: {self._loading_airplane.current_load}')
+        else:
+            if self._flown_flag:
+                print('Airplane has just departed')
+                self._flown_flag = False
+            else:
+                print('There are no available airplanes')
+
+    @staticmethod
+    def _show_airplane_info(airplane: Airplane) -> NoReturn:
+        print('\n=== AIRPLANE DEPARTURE INFO ===')
+        print(f'Airplane ID: {airplane.airplane_id}')
+        print(f'Number of containers: {airplane.current_load}')
+        print(f'Departure moment: {airplane.departure_time}')
+        print(f'Arrival moment: {airplane.arrival_time}')
