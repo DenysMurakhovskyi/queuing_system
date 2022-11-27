@@ -98,8 +98,12 @@ class Simulation:
         """
         if self.CONTAINERS_LOAD_PER_INTERVAL == -1:
             containers_to_load = list(self._arrival_queue)
+
         else:
-            containers_to_load = list(self._arrival_queue)[:self.CONTAINERS_LOAD_PER_INTERVAL]
+            if self._timer != 0:
+                containers_to_load = list(self._arrival_queue)[:self.CONTAINERS_LOAD_PER_INTERVAL]
+            else:
+                containers_to_load = []
 
         for container in containers_to_load:
             self._arrival_queue.popleft()

@@ -26,13 +26,16 @@ class TestSimulation(TestCase):
     def test_load_containers(self):
         self.sim_model._choose_airplane_for_load()
 
-        self.sim_model.LOADING_TIME = 0
+        self.sim_model.CONTAINERS_LOAD_PER_INTERVAL = -1
         self.sim_model._add_containers(2)
         self.assertEqual(2, self.sim_model._load_containers())
         self.assertEqual(2, self.sim_model.loading_airplane.current_load)
 
-        self.sim_model.LOADING_TIME = 1
+        self.sim_model.CONTAINERS_LOAD_PER_INTERVAL = 1
         self.sim_model._add_containers(2)
         self.assertEqual(0, self.sim_model._load_containers())
         self.assertEqual(2, self.sim_model.loading_airplane.current_load)
+
+    def test_generate_flight_time(self):
+        pass
 
