@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 import numpy as np
-from typing import List, NoReturn
+from typing import List, NoReturn, MutableMapping
 
 
 @dataclass
@@ -32,6 +32,8 @@ class Airplane:
         return self.capacity == self.current_load
 
     def load(self, container: Container) -> NoReturn:
+        if self.is_full_loaded:
+            raise RuntimeError('The airplane is fully loaded')
         self._containers.append(container)
 
     def unload(self):
@@ -49,7 +51,7 @@ class Airplane:
                         capacity=capacity)
 
     @staticmethod
-    def get_list_of_airplanes(capacities: dict) -> List["Airplane"]:
+    def get_list_of_airplanes(capacities: MutableMapping) -> List["Airplane"]:
         """
         Airplanes' list factory
         @param capacities: the dictionary of capacities

@@ -1,13 +1,13 @@
 from collections import deque
 from app.models import Container, Airplane, ModelStats
-from typing import List, NoReturn, Union
+from typing import List, NoReturn, Union, MutableMapping
 
 
 class Simulation:
 
-    CONTAINERS_PER_INTERVAL = 2
-    LOADING_TIME = 0
-    AIRPLANES_CAPACITIES = {80: 3, 140: 2}
+    CONTAINERS_ARRIVAL_PER_INTERVAL: int = 2
+    CONTAINERS_LOAD_PER_INTERVAL: int = 1
+    AIRPLANES_CAPACITIES: MutableMapping = {80: 3, 140: 2}
 
     @property
     def queue_current_len(self) -> int:
@@ -18,10 +18,8 @@ class Simulation:
         return self._loading_airplane
 
     def __init__(self):
-        if self.LOADING_TIME not in [0, 1]:
-            raise NotImplementedError('The case is not implemented')
-
         self._timer: int = 0
+        self._total_containers_passed = 0
         self._arrival_queue: deque = deque()
         self._loading_airplane: Union[Airplane, None] = None
         self._present_airplanes: List = Airplane.get_list_of_airplanes(self.AIRPLANES_CAPACITIES)
@@ -40,7 +38,7 @@ class Simulation:
             raise RuntimeError('The instance can be used only for single simulation')
 
         while self._timer < steps:
-            self._add_containers(self.CONTAINERS_PER_INTERVAL)
+            self._add_containers(self.CONTAINERS_ARRIVAL_PER_INTERVAL)
 
             if self._loading_airplane is None:
                 self._choose_airplane_for_load()
@@ -51,8 +49,10 @@ class Simulation:
 
             self._load_containers()
 
-            if self._loading_airplane.is_full_loaded():
+            if self._loading_airplane.is_full_loaded:
                 self._depart_airplane()
+
+            self._show_current_state()
 
             self._timer += 1
 
@@ -65,6 +65,8 @@ class Simulation:
         """
         for _ in range(n_to_add):
             self._arrival_queue.append(Container(arrival_time=self._timer))
+
+        self._total_containers_passed += n_to_add
 
     def _choose_airplane_for_load(self) -> NoReturn:
         """
@@ -94,8 +96,11 @@ class Simulation:
         Loads _containers into an airplane
         @return: number of loaded _containers
         """
-        containers_to_load = list(filter(lambda x: x.arrival_time <= self._timer - self.LOADING_TIME,
-                                         self._arrival_queue))
+        if self.CONTAINERS_LOAD_PER_INTERVAL == -1:
+            containers_to_load = list(self._arrival_queue)
+        else:
+            containers_to_load = list(self._arrival_queue)[:self.CONTAINERS_LOAD_PER_INTERVAL]
+
         for container in containers_to_load:
             self._arrival_queue.popleft()
             self._loading_airplane.load(container)
@@ -107,6 +112,18 @@ class Simulation:
         @return:
         """
         pass
+
+    def _show_current_state(self):
+        """
+        Shows current model state
+        Returns: None
+        """
+        print(f'\nTimer: {self._timer}')
+        print(f'Total containers arrived: {self._total_containers_passed}')
+        print(f'Number of containers in queue: {len(self._arrival_queue)}')
+        print(f'Number of present airplanes: {len(self._present_airplanes)}')
+        print(f'Loading airplane ID: {self._loading_airplane.airplane_id}')
+        print(f'Current airplane load: {self._loading_airplane.current_load}')
 
 
 
