@@ -151,6 +151,10 @@ class ModelStats:
             result.update({capacity: (mu, sigma)})
         return result
 
+    @property
+    def result(self) -> Tuple[float, Dict]:
+        return self.containers_load_mean_time[0], self.airplanes_load_mean_time
+
     def put_airplane_time(self, value: AirplaneWaitTime) -> NoReturn:
         self._airplanes_wait_time.append(value)
 

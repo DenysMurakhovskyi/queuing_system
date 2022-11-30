@@ -7,8 +7,7 @@ from sim_model.models import Container, Airplane, ModelStats, AirplaneWaitTime
 
 
 class Simulation:
-    CONTAINERS_ARRIVAL_PER_INTERVAL: int = 2
-    CONTAINERS_LOAD_PER_INTERVAL: int = -1
+    CONTAINERS_LOAD_PER_INTERVAL: int = 1
     AIRPLANES_CAPACITIES: MutableMapping = {80: 3, 140: 2}
     MEAN_TIME = 180
     SCALE = 60
@@ -21,7 +20,8 @@ class Simulation:
     def loading_airplane(self) -> Airplane:
         return self._loading_airplane
 
-    def __init__(self, seed_value: int = -1, show_stats: bool = True):
+    def __init__(self, seed_value: int = -1, show_stats: bool = True, arrival_quantity: int = 2):
+        self.CONTAINERS_ARRIVAL_PER_INTERVAL: int = arrival_quantity
         self._timer: int = 1
         self._total_containers_passed = 0
         self._arrival_queue: deque = deque()
@@ -73,6 +73,8 @@ class Simulation:
             self._show_current_state()
 
             self._timer += 1
+
+        self._model_used = True
 
         return self._stats
 
