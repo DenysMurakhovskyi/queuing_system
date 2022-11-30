@@ -1,9 +1,13 @@
 from dataclasses import dataclass, field
-from typing import List, NoReturn, MutableMapping, Union
+from typing import List, NoReturn, MutableMapping, Union, Dict, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from collections import namedtuple
+
+
+AirplaneWaitTime = namedtuple('AirplaneWaitTime', 'airplane_capacity wait_time')
 
 
 @dataclass
@@ -123,14 +127,34 @@ class ModelStats:
     Used for the statistics accumulation and representation after the end of the simulation.
     """
 
-    _airplanes_wait_time: List[int] = field(default_factory=list)
+    _airplanes_wait_time: List[AirplaneWaitTime] = field(default_factory=list)
     _containers_wait_departure_time: List[int] = field(default_factory=list)
     _containers_wait_loading_time: List[int] = field(default_factory=list)
 
-    def put_airplane_time(self, value: int) -> NoReturn:
+    @property
+    def containers_load_mean_time(self) -> Tuple[float, float]:
+        return float(np.mean(np.array(self._containers_wait_loading_time))),\
+               float(np.std(np.array(self._containers_wait_departure_time)))
+
+    @property
+    def containers_depart_mean_time(self) -> Tuple[float, float]:
+        return float(np.mean(np.array(self._containers_wait_departure_time))),\
+               float(np.std(np.array(self._containers_wait_departure_time)))
+
+    @property
+    def airplanes_load_mean_time(self) -> Dict:
+        result = {}
+        for capacity in set([item.airplane_capacity for item in self._airplanes_wait_time]):
+            list_of_values = [item.wait_time for item in self._airplanes_wait_time
+                              if item.airplane_capacity == capacity]
+            mu, sigma = np.mean(np.array(list_of_values)), np.std(np.array(list_of_values))
+            result.update({capacity: (mu, sigma)})
+        return result
+
+    def put_airplane_time(self, value: AirplaneWaitTime) -> NoReturn:
         self._airplanes_wait_time.append(value)
 
-    def put_airplanes_time(self, value: List[int]) -> NoReturn:
+    def put_airplanes_time(self, value: List[AirplaneWaitTime]) -> NoReturn:
         self._airplanes_wait_time.extend(value)
 
     def put_container_departure_time(self, value: int) -> NoReturn:
@@ -151,14 +175,16 @@ class ModelStats:
         @return:
         """
         print('\n\n=== MODEL STATISTICS ===\n')
-        print(f'Containers loading time: mean={np.mean(np.array(self._containers_wait_loading_time)):.1f},'
-              f' std={np.std(np.array(self._containers_wait_loading_time)):.1f}')
+        mu, sigma = self.containers_load_mean_time
+        print(f'Containers loading time: mean={mu:.1f}, std={sigma:.1f}')
 
-        print(f'Containers departure time: mean={np.mean(np.array(self._containers_wait_departure_time)):.1f},'
-              f' std={np.std(np.array(self._containers_wait_departure_time)):.1f}')
+        mu, sigma = self.containers_depart_mean_time
+        print(f'Containers departure time: mean={mu:.1f}, std={sigma:.1f}')
 
-        print(f'Airplanes load time: mean={np.mean(np.array(self._airplanes_wait_time)):.1f},'
-              f' std={np.std(np.array(self._airplanes_wait_time)):.1f}')
+        for capacity, value in self.airplanes_load_mean_time.items():
+            print(f'\nStatistics for airplane with capacity = {capacity}')
+            mu, sigma = value
+            print(f'Airplanes load time: mean={mu:.1f}, std={sigma:.1f}')
 
         sns.displot(self._containers_wait_loading_time, bins=10)
         plt.title('Containers wait for loading time distribution')
@@ -166,8 +192,4 @@ class ModelStats:
 
         sns.displot(self._containers_wait_departure_time, bins=10)
         plt.title('Containers wait for departure time distribution')
-        plt.show()
-
-        sns.displot(self._airplanes_wait_time, bins=5)
-        plt.title('Airplanes wait time distribution')
         plt.show()

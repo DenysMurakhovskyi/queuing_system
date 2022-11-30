@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from app.models import Airplane
+from sim_model.models import Airplane
 
 
 class TestModels(TestCase):

@@ -4,8 +4,8 @@ from unittest import TestCase
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from app.main import Simulation
-from app.models import Airplane
+from sim_model.main import Simulation
+from sim_model.models import Airplane
 
 
 class TestSimulation(TestCase):
@@ -40,7 +40,7 @@ class TestSimulation(TestCase):
         self.assertEqual(2, self.sim_model.loading_airplane.current_load)
 
     def test_generate_flight_time(self):
-        values = [self.sim_model._generate_flight_time() for _ in range(2000)]
+        values = [self.sim_model._generate_flight_time() for _ in range(10000)]
         sns.displot(values, bins=20)
         plt.show()
 

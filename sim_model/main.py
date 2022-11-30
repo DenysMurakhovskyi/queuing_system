@@ -3,7 +3,7 @@ from typing import List, NoReturn, Union, MutableMapping
 
 from numpy.random import normal, seed
 
-from app.models import Container, Airplane, ModelStats
+from sim_model.models import Container, Airplane, ModelStats, AirplaneWaitTime
 
 
 class Simulation:
@@ -21,7 +21,7 @@ class Simulation:
     def loading_airplane(self) -> Airplane:
         return self._loading_airplane
 
-    def __init__(self, seed_value: int, show_stats: bool = True):
+    def __init__(self, seed_value: int = -1, show_stats: bool = True):
         self._timer: int = 1
         self._total_containers_passed = 0
         self._arrival_queue: deque = deque()
@@ -111,16 +111,20 @@ class Simulation:
         @return: None
         """
         self._loading_airplane.set_containers_departure_time(self._timer)
+        self._loading_airplane.departure_time = self._timer
+
         self._stats.put_containers_loading_time(self._loading_airplane.containers_loading_times)
         self._stats.put_containers_departure_time(self._loading_airplane.containers_departure_times)
-        self._loading_airplane.departure_time = self._timer
-        self._stats.put_airplane_time(self._loading_airplane.load_time)
+        self._stats.put_airplane_time(AirplaneWaitTime(airplane_capacity=self._loading_airplane.capacity,
+                                                       wait_time=self._loading_airplane.load_time))
+
         self._loading_airplane.arrival_time = self._timer + self._generate_flight_time()
-        index_in_list = self._present_airplanes.index(self._loading_airplane)
-        departed_airplane = self._present_airplanes.pop(index_in_list)
+
+        departed_airplane = self._present_airplanes.pop(self._present_airplanes.index(self._loading_airplane))
         self._flown_away_airplanes.append(departed_airplane)
-        self._loading_airplane = None
-        self._flown_flag = True
+
+        self._loading_airplane, self._flown_flag = None, True
+
         return departed_airplane
 
     def _generate_flight_time(self) -> int:
